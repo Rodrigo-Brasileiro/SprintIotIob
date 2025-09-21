@@ -1,4 +1,4 @@
-# PRojeto FYORA de reconhecimento facial utilizando as tecnologias OpenCV + MediaPipe
+# Projeto FYORA de reconhecimento facial utilizando as tecnologias OpenCV + MediaPipe
 
 ## Objetivo
 Este projeto tem como objetivo desenvolver uma aplicação para a FYORA( aplicativo que visa ajudar pessoas viciadas em jogos de apostas) de reconhecimento facial para garantir que a pessoas que estão se cadastrando no aplicativo sejam as mesmas que estão sendo reconhecidas.  
@@ -15,7 +15,8 @@ A aplicação utiliza **OpenCV** e **MediaPipe Face Detection/FaceMesh** para:
 - [OpenCV](https://opencv.org/) → captura de vídeo e processamento de imagens  
 - [MediaPipe](https://developers.google.com/mediapipe) → detecção facial e landmarks  
 - [NumPy](https://numpy.org/) → operações matriciais e embeddings  
-- [Pickle](https://docs.python.org/3/library/pickle.html) → armazenamento de embeddings faciais  
+- [Pickle](https://docs.python.org/3/library/pickle.html) → armazenamento de embeddings faciais
+- Anaconda navigator
 
 ---
 
