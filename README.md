@@ -1,10 +1,12 @@
-# 👁️ Reconhecimento Facial (Local) – OpenCV + MediaPipe (Mem-Only)
+# Projeto FYORA de reconhecimento facial utilizando as tecnologias OpenCV + MediaPipe
 
-## 🎯 Objetivo
-Aplicação **local (desktop/notebook)** que realiza **detecção e identificação facial** em tempo real usando **OpenCV** e **MediaPipe**.  
-Tudo funciona **100% em memória** (não grava `encodings.pkl`).
-
-Projeto no contexto da disciplina **IoT & IOB (FIAP – 2025)**.
+## Objetivo
+Este projeto tem como objetivo desenvolver uma aplicação para a FYORA( aplicativo que visa ajudar pessoas viciadas em jogos de apostas) de reconhecimento facial para garantir que a pessoas que estão se cadastrando no aplicativo sejam as mesmas que estão sendo reconhecidas.  
+A aplicação utiliza **OpenCV** e **MediaPipe Face Detection/FaceMesh** para:  
+- Detectar rostos pela webcam  
+- Exibir retângulos de identificação  
+- Desenhar landmarks faciais (olhos, boca, sobrancelhas, contorno, etc.)  
+- Reconhecer usuários previamente cadastrados a partir de um dataset de imagens  
 
 ---
 
@@ -13,6 +15,7 @@ Projeto no contexto da disciplina **IoT & IOB (FIAP – 2025)**.
 - OpenCV (captura de vídeo e desenho)
 - MediaPipe (FaceDetection + FaceMesh)
 - NumPy (operações numéricas)
+- Anaconda navigator
 
 ---
 
