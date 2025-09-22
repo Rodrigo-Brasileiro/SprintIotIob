@@ -1,93 +1,96 @@
-# encode_faces.py
 import os
 import cv2
-import mediapipe as mp
 import numpy as np
-import pickle
-import argparse
+import mediapipe as mp
 
 mp_face_detection = mp.solutions.face_detection
 
-def extract_face_embedding(image_path, model_selection=1, min_detection_confidence=0.6, size=128):
+def extract_face_embedding(image_path, size=128, model_selection=1, min_detection_confidence=0.6):
     img = cv2.imread(image_path)
     if img is None:
         return None
     rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
     with mp_face_detection.FaceDetection(model_selection=model_selection,
-                                         min_detection_confidence=min_detection_confidence) as detector:
-        results = detector.process(rgb)
-        if not results.detections:
-            return None
+                                         min_detection_confidence=min_detection_confidence) as det:
+        res = det.process(rgb)
+    if not res.detections:
+        return None
 
-        # pega a primeira detecção
-        d = results.detections[0].location_data.relative_bounding_box
-        h, w, _ = img.shape
-        x = max(int(d.xmin * w), 0)
-        y = max(int(d.ymin * h), 0)
-        w_box = max(int(d.width * w), 0)
-        h_box = max(int(d.height * h), 0)
+    d = res.detections[0].location_data.relative_bounding_box
+    h, w, _ = img.shape
+    x = max(int(d.xmin * w), 0)
+    y = max(int(d.ymin * h), 0)
+    ww = max(int(d.width * w), 0)
+    hh = max(int(d.height * h), 0)
+    x2 = min(x + ww, w)
+    y2 = min(y + hh, h)
+    if x >= x2 or y >= y2:
+        return None
 
-        # ajustar limites
-        x2 = min(x + w_box, w)
-        y2 = min(y + h_box, h)
-        if x >= x2 or y >= y2:
-            return None
+    face = rgb[y:y2, x:x2]
+    if face.size == 0:
+        return None
 
-        face = rgb[y:y2, x:x2]
-        if face.size == 0:
-            return None
+    emb = cv2.resize(face, (size, size)).astype("float32").flatten()
+    nrm = np.linalg.norm(emb)
+    if nrm == 0:
+        return None
+    return emb / (nrm + 1e-10)
 
-        face_resized = cv2.resize(face, (size, size)).astype("float32").flatten()
-        norm = np.linalg.norm(face_resized)
-        if norm == 0:
-            return None
-        return face_resized / norm
-
-def main(args):
-    dataset_dir = args.dataset
-    out_file = args.output
-    encodings = {}  # person -> list of embeddings
-
+def build_encodings(dataset_dir="dataset", size=128, model_selection=1, min_detection_confidence=0.6):
+    """
+    Lê dataset/<Pessoa>/*.jpg|png, gera:
+      - encodings: { pessoa: [emb1, emb2, ...] }
+      - centroids: { pessoa: media_normalizada }
+      - meta: parâmetros usados
+    Tudo em memória (não grava arquivos).
+    """
     if not os.path.isdir(dataset_dir):
-        print(f"[ERRO] dataset não encontrado em: {dataset_dir}")
-        return
+        raise FileNotFoundError(f"Dataset não encontrado em: {dataset_dir}")
+
+    encodings = {}
+    total_imgs = 0
+    ok_imgs = 0
 
     for person in sorted(os.listdir(dataset_dir)):
-        person_dir = os.path.join(dataset_dir, person)
-        if not os.path.isdir(person_dir):
+        pdir = os.path.join(dataset_dir, person)
+        if not os.path.isdir(pdir):
             continue
 
-        embeddings = []
-        for fname in sorted(os.listdir(person_dir)):
-            path = os.path.join(person_dir, fname)
-            emb = extract_face_embedding(path,
-                                         model_selection=args.model_selection,
-                                         min_detection_confidence=args.min_detection_confidence,
-                                         size=args.size)
+        person_embs = []
+        for fname in sorted(os.listdir(pdir)):
+            if not fname.lower().endswith((".jpg", ".jpeg", ".png", ".bmp", ".webp")):
+                continue
+            total_imgs += 1
+            path = os.path.join(pdir, fname)
+            emb = extract_face_embedding(path, size=size,
+                                         model_selection=model_selection,
+                                         min_detection_confidence=min_detection_confidence)
             if emb is not None:
-                embeddings.append(emb)
+                person_embs.append(emb)
+                ok_imgs += 1
             else:
-                print(f"[WARN] {person}/{fname} -> rosto não detectado ou inválido")
+                print(f"[WARN] Sem rosto válido em: {person}/{fname}")
 
-        if embeddings:
-            encodings[person] = embeddings
-            print(f"[INFO] {person}: {len(embeddings)} embeddings gerados")
+        if person_embs:
+            encodings[person] = person_embs
 
     if not encodings:
-        print("[ERRO] Nenhum embedding gerado. Verifique as imagens do dataset.")
-        return
+        raise RuntimeError("Nenhum embedding válido foi gerado. Verifique o dataset.")
 
-    with open(out_file, "wb") as f:
-        pickle.dump({"encodings": encodings, "size": args.size}, f)
-    print(f"[OK] Encodings salvos em: {out_file}")
+    centroids = {}
+    for person, embs in encodings.items():
+        arr = np.vstack(embs).astype(np.float32)
+        c = arr.mean(axis=0)
+        c /= (np.linalg.norm(c) + 1e-10)
+        centroids[person] = c
 
-if __name__ == "__main__":
-    p = argparse.ArgumentParser(description="Gerar encodings a partir do dataset")
-    p.add_argument("--dataset", "-d", default="dataset", help="Pasta do dataset (pasta por pessoa)")
-    p.add_argument("--output", "-o", default="encodings.pkl", help="Arquivo de saída")
-    p.add_argument("--size", type=int, default=128, help="Tamanho do embedding (px). Usa face resized para size x size")
-    p.add_argument("--model_selection", type=int, choices=[0,1], default=1, help="MediaPipe model_selection (0 ou 1)")
-    p.add_argument("--min_detection_confidence", type=float, default=0.6, help="Confiança mínima para detecção")
-    args = p.parse_args()
-    main(args)
+    meta = {
+        "size": size,
+        "model_selection": model_selection,
+        "min_det_conf": min_detection_confidence,
+        "total_imagens": total_imgs,
+        "imagens_ok": ok_imgs
+    }
+    print(f"[OK] Encodings em memória: {len(encodings)} pessoas | imagens OK {ok_imgs}/{total_imgs}")
+    return encodings, centroids, meta
