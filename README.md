@@ -130,6 +130,8 @@ python app.py
 ---
 
 ## 👥 Integrantes
-- **Pedro Oliveira Valotto** — RM 551445  
-- **Rony Ken Nagai** — RM 551549  
-- **Tomáz Versolato Carballo** — RM 551417
+- **GUILHERME ROCHA BIANCHINI** - RM97974
+- **NIKOLAS RODRIGUES MOURA DOS SANTOS** - RM551566
+- **PEDRO HENRIQUE PEDROSA** TAVARES - RM97877
+- **RODRIGO BRASILEIRO** - RM98952
+- **THIAGO JARDIM DE OLIVEIRA** - RM551624
