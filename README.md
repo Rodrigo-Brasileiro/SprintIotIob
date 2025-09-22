@@ -10,96 +10,131 @@ A aplicação utiliza **OpenCV** e **MediaPipe Face Detection/FaceMesh** para:
 
 ---
 
-## 🛠️ Tecnologias utilizadas
-- [Python 3.12](https://www.python.org/)  
-- [OpenCV](https://opencv.org/) → captura de vídeo e processamento de imagens  
-- [MediaPipe](https://developers.google.com/mediapipe) → detecção facial e landmarks  
-- [NumPy](https://numpy.org/) → operações matriciais e embeddings  
-- [Pickle](https://docs.python.org/3/library/pickle.html) → armazenamento de embeddings faciais
+## 🧰 Tecnologias
+- Python 3.12
+- OpenCV (captura de vídeo e desenho)
+- MediaPipe (FaceDetection + FaceMesh)
+- NumPy (operações numéricas)
 - Anaconda navigator
 
 ---
 
-## 📂 Estrutura do projeto
+## 📂 Estrutura
 ```
-├── dataset/                # Imagens de referência por pessoa
-│   ├── Guilherme/
-│   ├── Nikolas/
+.
+├── dataset/                 # Imagens de referência (uma pasta por pessoa)
 │   ├── Pedro/
-│   ├── Rodrigo/
-│   └── Thiago/
-│
-├── app.py                  # Executa reconhecimento facial em tempo real
-├── encode_faces.py         # Processa imagens do dataset e gera embeddings
-├── encodings.pkl           # Arquivo gerado com embeddings
-├── requirements.txt        # Dependências do projeto
-└── README.md               # Documentação do projeto
+│   │   ├── pedro1.jpg
+│   │   └── pedro2.jpg
+│   └── Nikolas/
+│       ├── niko1.jpg
+│       └── niko2.jpg
+├── app.py                   # Executa: gera encodings em memória + reconhecimento + landmarks
+├── encode_faces.py          # Funções para gerar encodings em memória (sem disco)
+├── check_dataset.py         # Verifica se há rostos nas imagens do dataset
+├── requirements.txt
+└── README.md
 ```
 
 ---
 
-## ⚙️ Instalação e execução
-### 1️⃣ Clonar o repositório
-```bash
-git clone https://github.com/Rodrigo-Brasileiro/SprintIotIob
-```
+## ⚙️ Como rodar
 
-### 2️⃣ Criar e ativar ambiente virtual
+### 1) Ambiente
 ```bash
 python -m venv .venv
-.\.venv\Scriptsctivate   # Windows
-source .venv/bin/activate  # Linux/Mac
+# Windows
+.\.venv\Scriptsctivate
+# Linux/Mac
+source .venv/bin/activate
 ```
 
-### 3️⃣ Instalar dependências
+### 2) Dependências
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4️⃣ Preparar o dataset
-Coloque as imagens em `dataset/` com **uma pasta por pessoa**, exemplo:
+### 3) Dataset (mínimo)
 ```
 dataset/
- ├── Guilherme/
- │   ├── img1.jpg
- │   └── img2.jpg
- ├── Nikolas/
- ├── Pedro/
- ├── Rodrigo/
- └── Thiago/
+ ├── PessoaA/
+ │   ├── a1.jpg
+ │   └── a2.jpg
+ └── PessoaB/
+     ├── b1.jpg
+     └── b2.jpg
 ```
+> Dica: 3–6 fotos por pessoa (frontal e levemente anguladas).
 
-### 5️⃣ Gerar embeddings
+### 4) (Opcional) Validar dataset
 ```bash
-python encode_faces.py
+python check_dataset.py
 ```
 
-### 6️⃣ Rodar reconhecimento facial
+### 5) Rodar a aplicação
 ```bash
 python app.py
 ```
-
-Ao rodar, a webcam abrirá e exibirá:  
-- Retângulo em torno de cada rosto  
-- Nome da pessoa reconhecida ou “Desconhecido”  
-- Landmarks faciais (olhos, boca, sobrancelhas, contorno)  
-- FPS da execução  
+- Abre a webcam.
+- Mostra **retângulos** (verde = reconhecido, vermelho = desconhecido).
+- Exibe **nome + distância**.
+- Desenha **landmarks** (FaceMesh) e **rótulos de regiões** (olhos, boca, sobrancelhas, contorno, íris).
+- Mostra **FPS**.
+- Pressione **ESC** para sair.
 
 ---
 
-## 🎛️ Parâmetros ajustáveis
-No código (`app.py` e `encode_faces.py`) alguns parâmetros podem ser modificados:  
+## 🎛️ Parâmetros (em `app.py`)
+- `EMB_SIZE` (default `128`)  
+  Tamanho do recorte redimensionado antes de gerar o “embedding”.  
+- `MODEL_SELECTION` (`0` perto | `1` longe)  
+  Modelo da FaceDetection do MediaPipe.  
+- `MIN_DET_CONF` (default `0.6`)  
+  Confiança mínima para detectar rostos.  
+- `THRESH` (default `0.32`)  
+  Limite de distância cosseno (menor = mais parecido).  
+- `MARGIN` (default `0.06`)  
+  Diferença mínima entre o melhor e o 2º melhor — reduz confusões.  
+- `MAX_MESH_FACES` (default `5`)  
+  Quantos rostos o FaceMesh processa para landmarks.
 
-- **`min_detection_confidence`** → confiança mínima para detecção (0.3 = mais sensível, 0.8 = mais preciso).  
-- **`model_selection`** →  
-  - `0`: otimizado para rostos próximos (selfies).  
-  - `1`: otimizado para rostos mais distantes.  
-- **`size`** → tamanho do embedding (pixels usados para vetorizar o rosto, padrão `128x128`).  
-- **`threshold`** → limiar de similaridade (quanto menor, mais estrito para reconhecer).  
+**Impacto prático:**
+- Diminuir `MIN_DET_CONF` → detecta mais, porém mais falsos positivos.  
+- Aumentar `THRESH` → reconhece com mais facilidade, porém pode errar.  
+- Diminuir `THRESH` + manter `MARGIN` → mais estrito (menos erros).  
+- `EMB_SIZE` maior → potencialmente mais informação, porém mais custo.
 
-## Integrantes
-GUILHERME ROCHA BIANCHINI - RM97974
-NIKOLAS RODRIGUES MOURA DOS SANTOS - RM551566
-PEDRO HENRIQUE PEDROSA TAVARES - RM97877
-RODRIGO BRASILEIRO - RM98952
-THIAGO JARDIM DE OLIVEIRA - RM551624
+---
+
+## 🧪 Como a identificação funciona
+1. O sistema **detecta** o rosto (MediaPipe FaceDetection).  
+2. Recorta, redimensiona e **normaliza** para gerar um vetor (embedding) simples.  
+3. Compara com os **centróides** (médias normalizadas) de cada pessoa do dataset.  
+4. Se a **distância cosseno** do melhor for ≤ `THRESH` **e** distante do 2º melhor por ≥ `MARGIN`, **reconhece**; caso contrário, marca **Desconhecido**.
+
+> Observação: essa abordagem é **didática** e atende ao escopo da disciplina. Para produção, prefira embeddings de modelos pré-treinados (ex.: `face_recognition`/dlib/DeepFace).
+
+---
+
+## 🛠️ Dicas de qualidade do dataset
+- Use 3–6 fotos por pessoa (frontal e levemente anguladas).  
+- Iluminação razoável (evite sombra extrema).  
+- Evite fotos borradas ou muito pequenas.  
+- Atualize as fotos e rode novamente o app (ele recalcula em memória a cada execução).
+
+---
+
+## 🧯 Troubleshooting
+- **Câmera não abre** → troque o ID em `cv2.VideoCapture(0)` para `1` ou `2`.  
+- **Rosto não detecta** → diminua `MIN_DET_CONF` (ex.: 0.4) e valide com `check_dataset.py`.  
+- **Reconhece errado** → diminua `THRESH` (ex.: 0.28) e/ou aumente `MARGIN` (ex.: 0.08).  
+- **FPS baixo** → comente a parte dos landmarks ou reduza `MAX_MESH_FACES`.
+
+---
+
+## 👥 Integrantes
+- **GUILHERME ROCHA BIANCHINI** - RM97974
+- **NIKOLAS RODRIGUES MOURA DOS SANTOS** - RM551566
+- **PEDRO HENRIQUE PEDROSA** TAVARES - RM97877
+- **RODRIGO BRASILEIRO** - RM98952
+- **THIAGO JARDIM DE OLIVEIRA** - RM551624
